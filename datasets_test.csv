@@ -7,3 +7,4 @@ id,name,modality,principal_investigator,lead,description,file_path
 7,URT005 v4,scRNA-seq,Jake Kohlmeier,Kirsten Kost,"single cell RNA of spleen, LG, NC; TGFb WT/KO",qc_KKR_URT005_scRNA.CSP.TCR_dec24_v4.h5ad
 8,URT007 v1,scRNA-seq,Jake Kohlmeier,Kirsten Kost,"single cell RNA of spleen, LG, and NC; IN/IP PR8 infection (no IP for Lung)",qc_rna_KNK_URT007_scRNA.TCR_jul25.h5ad
 9,URT007 v2,scRNA-seq,Jake Kohlmeier,Kirsten Kost,"single cell RNA of spleen, LG, and NC; IN/IP PR8 infection (no IP for Lung)",qc_rna_KNK_URT007_scRNA.TCR_jul25_v2.h5ad
+10,URT004 v1,scRNA-seq,Jake Kohlmeier,Kirsten Kost,"single cell RNA of spleen and NC; IN/IP PR8 infection",qc_rna_KNK_URT004_scRNA_aug24.h5ad
