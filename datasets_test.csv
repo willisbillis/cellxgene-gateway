@@ -1,2 +1,9 @@
-id,name,modality,principal_investigator,lead,description
-qc_rna_KNK_URT007_scRNA.TCR_jul25_v2.h5ad,ACV02 ATAC,ATAC-seq,Dr. Smith,Alice Johnson,Peripheral blood mononuclear cells from healthy donor
+id,name,modality,principal_investigator,lead,description,file_path
+1,ACV02 RNA,scRNA-seq,Jerry Boss,Elliott Williams,"Sorted T cells from HD, RTX-treated, and MMF-treated human donors with SARS-Cov-2 vaccination course",qc_rna_ACV02_all.h5ad
+2,ACV02 RNA CD4,scRNA-seq,Jerry Boss,Elliott Williams,"Sorted T cells, subsetted to just CD4 T cells, from HD, RTX-treated, and MMF-treated human donors with SARS-Cov-2 vaccination course",qc_rna_ACV02_cd4.h5ad
+4,ACV02 ATAC,scATAC-seq,Jerry Boss,Elliott Williams,"Sorted T cells from HD, RTX-treated, and MMF-treated human donors with SARS-Cov-2 vaccination course",qc_atac.pseudorna_ACV02_all.h5ad
+5,URT005 v1,scRNA-seq,Jake Kohlmeier,Kirsten Kost,"single cell RNA of spleen, LG, NC; TGFb WT/KO",qc_KKR_URT005_scRNA.CSP.TCR_dec24_v1.h5ad
+6,URT005 v3,scRNA-seq,Jake Kohlmeier,Kirsten Kost,"single cell RNA of spleen, LG, NC; TGFb WT/KO",qc_KKR_URT005_scRNA.CSP.TCR_dec24_v3.h5ad
+7,URT005 v4,scRNA-seq,Jake Kohlmeier,Kirsten Kost,"single cell RNA of spleen, LG, NC; TGFb WT/KO",qc_KKR_URT005_scRNA.CSP.TCR_dec24_v4.h5ad
+8,URT007 v1,scRNA-seq,Jake Kohlmeier,Kirsten Kost,"single cell RNA of spleen, LG, and NC; IN/IP PR8 infection (no IP for Lung)",qc_rna_KNK_URT007_scRNA.TCR_jul25.h5ad
+9,URT007 v2,scRNA-seq,Jake Kohlmeier,Kirsten Kost,"single cell RNA of spleen, LG, and NC; IN/IP PR8 infection (no IP for Lung)",qc_rna_KNK_URT007_scRNA.TCR_jul25_v2.h5ad
