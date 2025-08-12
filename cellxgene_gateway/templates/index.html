@@ -26,46 +26,25 @@
 	</style>
 </head>
 <body>
-	<header class="navbar navbar-expand navbar-dark flex-column flex-md-row bd-navbar">
-	  <h3>Cellxgene Gateway - HOME</h3>
-	</header>
-	<br>
-
-	<h1 style="padding-left:35px">
-		Links:	
-	</h1>
-	<div class="list-group" style="width:50%;padding-left:65px">
-	  <a href="{{ url_for('filecrawl') }}" class="list-group-item list-group-item-action">
-		  <u>File Crawler: Allows you to view all uploaded data.</u></a>
-		  
+	<!-- Redesigned landing section -->
+	<div class="container" style="max-width: 800px; margin: 0 auto; padding: 40px 0;">
+		<div class="card shadow" style="border-radius: 16px;">
+			<div class="card-body">
+				<h2 class="card-title text-center mb-4" style="font-weight: 700; color: #2c3e50;">Welcome to Cellxgene Gateway</h2>
+				<p class="card-text text-center" style="font-size: 1.2em; color: #555;">A simple interface to explore and manage your single-cell datasets.</p>
+				<div class="row mt-4 mb-2">
+					<div class="col text-center">
+						<a href="{{ url_for('filecrawl') }}" class="btn btn-primary btn-lg mx-2" style="border-radius: 8px;">Browse Data</a>
+						<a href="{{ url_for('do_GET_status') }}" class="btn btn-info btn-lg mx-2" style="border-radius: 8px;">Cache Status</a>
+					</div>
+				</div>
+				<hr>
+				<div class="text-center" style="color: #888; font-size: 0.95em;">
+					Need help? See the <a href="https://github.com/Novartis/cellxgene-gateway" target="_blank">documentation</a> or contact your admin.
+				</div>
+			</div>
+		</div>
 	</div>
-	<div class="list-group" style="width:50%;padding-left:65px">
-		<a href="{{ url_for('do_GET_status') }}" class="list-group-item list-group-item-action">
-			<u>Cache Status: view status of launched cellxgene servers.</u></a>
-	</div>
-	
-	<br>
-
-	<h1 style="padding-left:35px">
-		How To Upload Data via SSH and SCP:
-	</h1>
-	<ol style="padding-left:85px;">
-		<li>
-			Confirm that your ssh key has been properly added. Running the following command should connect you to the server:
-		</li>
-		<pre>ssh ec2-user@{{ ip }}</pre>	
-		<li>
-			Prepare your data on your own machine. They should be in a common folder called 'USER' and should look <br>similar to the following structure:  
-		</li>
-		<pre>- USER
-    - hpc.h5ad
-    - pbmc3k.h5ad</pre>	
-		<li>Copy your data to the server (replace USER with your username):</li>
-		<pre>ssh ec2-user@{{ ip }} 'mkdir -p {{ cellxgene_data }}/USER/'
-ssh ec2-user@{{ ip }} 'mkdir -p {{ cellxgene_data }}/USER/DATA/'
-scp -r pbmc3k.h5ad ec2-user@{{ ip }}:{{ cellxgene_data }}/USER/DATA/</pre>	
-		<li>Take a look at your data using the file crawler link above</li>
-	</ol>	
 
 </body>
 </html>
