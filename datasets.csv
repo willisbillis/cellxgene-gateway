@@ -1,0 +1,4 @@
+id,name,modality,principal_investigator,lead,description,file_path
+5,KNK Sample,RNA-seq,Dr. Lee,Eve Black,Single-cell RNA-seq from KNK project,qc_rna_KNK_URT007_scRNA.TCR_jul25_v2.h5ad
+6,Test Dataset,RNA-seq,Dr. Jones,Test Lead,Test dataset for annotation creation,test_dataset.h5ad
+7,Fresh Dataset,RNA-seq,Dr. New,Fresh Lead,A completely new dataset without annotations,fresh_dataset.h5ad

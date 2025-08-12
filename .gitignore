@@ -4,6 +4,7 @@ __pycache__
 *.pyc
 run.sh
 .cellxgene-gateway
+*.h5ad
 
 
 # Created by https://www.gitignore.io/api/python

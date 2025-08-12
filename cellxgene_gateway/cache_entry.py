@@ -118,7 +118,7 @@ class CacheEntry:
         # for v0.16.0 compatibility, see issue #24
         gateway_content = (
             re.sub(
-                '(="|\()/static/',
+                r'(="|\()/static/',
                 f"\\1{self.key.gateway_basepath()}static/",
                 cellxgene_content,
             )
@@ -146,12 +146,11 @@ class CacheEntry:
             )
 
         headers = {}
+        # Define headers to copy from client to cellxgene (excluding hop-by-hop headers and encoding)
         copy_headers = [
             "accept",
-            "accept-encoding",
             "accept-language",
             "cache-control",
-            "connection",
             "content-length",
             "content-type",
             "cookie",
@@ -189,16 +188,49 @@ class CacheEntry:
                 raise CellxgeneException(f"Unexpected method {request.method}", 400)
             content_type = cellxgene_response.headers["content-type"]
             if "text" in content_type:
-                gateway_content = self.rewrite_text_content(
-                    cellxgene_response.content.decode()
-                )
+                try:
+                    gateway_content = self.rewrite_text_content(
+                        cellxgene_response.content.decode("utf-8")
+                    )
+                except UnicodeDecodeError:
+                    # Handle binary content that's marked as text
+                    # Try with latin-1 encoding as fallback
+                    try:
+                        gateway_content = self.rewrite_text_content(
+                            cellxgene_response.content.decode("latin-1")
+                        )
+                    except UnicodeDecodeError:
+                        # If all else fails, return raw bytes
+                        gateway_content = cellxgene_response.content
             else:
                 gateway_content = cellxgene_response.content
 
             resp_headers = {}
-            for h in copy_headers:
+            # Define headers to copy from cellxgene response (excluding hop-by-hop headers)
+            response_copy_headers = [
+                "accept",
+                "accept-encoding",
+                "accept-language",
+                "cache-control",
+                "content-length",
+                "content-type",
+                "cookie",
+                "host",
+                "origin",
+                "pragma",
+                "referer",
+                "sec-fetch-mode",
+                "sec-fetch-site",
+                "user-agent",
+            ]
+            for h in response_copy_headers:
                 if h in cellxgene_response.headers:
                     resp_headers[h] = cellxgene_response.headers[h]
+            
+            # Add cache-busting headers to prevent browser caching issues
+            resp_headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            resp_headers["Pragma"] = "no-cache"
+            resp_headers["Expires"] = "0"
 
             gateway_response = make_response(
                 gateway_content,

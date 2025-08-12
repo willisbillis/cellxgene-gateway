@@ -24,14 +24,18 @@ def render_annotations(item, item_source):
     )
     new_annotation = [f"<a class='new' href='{url}'>new</a>"]
 
-    annotations = (
-        [
-            f"<a href='{CacheKey(item, item_source, a).view_url}/'>{html.escape(a.name)}</a>"
-            for a in item.annotations
-        ]
-        if item.annotations
-        else []
-    )
+    annotations = []
+    if item.annotations:
+        for a in item.annotations:
+            view_url = CacheKey(item, item_source, a).view_url
+            download_url = f"/download/{item_source.name}/annotation/{a.descriptor}"
+            annotations.append(
+                f"<span class='annotation-item'>"
+                f"<a href='{view_url}/' title='View with {html.escape(a.name)}'>{html.escape(a.name)}</a> "
+                f"<a href='{download_url}' class='download-link' title='Download {html.escape(a.name)}' download>⬇</a>"
+                f"</span>"
+            )
+    
     return "| annotations: " + ", ".join(new_annotation + annotations)
 
 

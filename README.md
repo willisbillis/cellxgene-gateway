@@ -80,6 +80,17 @@ Optional environment variables:
 * `GATEWAY_LOG_LEVEL` - default is `INFO`. set to `DEBUG` to increase logging and to `WARNING` to decrease logging.
 * `S3_ENABLE_LISTINGS_CACHE` - Set to `true` or to `1` to cache listings of S3 folders for performance. If the cache becomes stale, set `filecrawl.html?refresh=true` query parameter to refresh the cache.
 
+* `DATASET_METADATA_CSV` - Path to a CSV file containing dataset metadata for the data browser and filtering UI. If not set, defaults to `datasets.csv` in the project root. The CSV should have columns: `id,name,modality,principal_investigator,lead,description`. Example:
+
+```csv
+id,name,modality,principal_investigator,lead,description
+1,PBMC 3k,RNA-seq,Dr. Smith,Alice Johnson,Peripheral blood mononuclear cells from healthy donor
+2,Mouse Brain,ATAC-seq,Dr. Lee,Bob Brown,Single-cell ATAC-seq of mouse brain tissue
+3,Human Lung,Multiome,Dr. Patel,Carol White,Multi-modal profiling of human lung samples
+4,Pancreas,RNA-seq,Dr. Smith,David Green,Single-cell RNA-seq of pancreas tissue
+5,Heart,ATAC-seq,Dr. Lee,Eve Black,ATAC-seq of heart tissue from mouse model
+```
+
 If any of the following optional variables are set, [ProxyFix](https://werkzeug.palletsprojects.com/en/1.0.x/middleware/proxy_fix/) will be used.
 * `PROXY_FIX_FOR` - Number of upstream proxies setting X-Forwarded-For
 * `PROXY_FIX_PROTO` - Number of upstream proxies setting X-Forwarded-Proto

@@ -31,6 +31,7 @@ from cellxgene_gateway.cache_key import CacheKey
 from cellxgene_gateway.cellxgene_exception import CellxgeneException
 from cellxgene_gateway.extra_scripts import get_extra_scripts
 from cellxgene_gateway.filecrawl import render_item_source
+from cellxgene_gateway.dataset_metadata_loader import load_dataset_metadata
 from cellxgene_gateway.process_exception import ProcessException
 from cellxgene_gateway.prune_process_cache import PruneProcessCache
 from cellxgene_gateway.util import current_time_stamp
@@ -138,24 +139,61 @@ def index():
 @app.route("/filecrawl.html")
 @app.route("/filecrawl/<path:path>")
 def filecrawl(path=None):
-    source_name = request.args.get("source")
-    sources = (
-        filter(
-            lambda x: x.name == urllib.parse.unquote_plus(source_name),
-            item_sources,
-        )
-        if source_name
-        else item_sources
-    )
-    # loop all data sources --
-    rendered_sources = [
-        render_item_source(item_source, path) for item_source in sources
-    ]  # will we need to make this async in the page???
-    rendered_html = "\n".join(rendered_sources)
+    # Load dataset metadata from CSV
+    csv_path = os.environ.get("DATASET_METADATA_CSV", "datasets.csv")
+    data_dir = os.environ.get("CELLXGENE_DATA", "cellxgene_data")
+    datasets, modalities, principal_investigators, leads = load_dataset_metadata(csv_path, data_dir)
+
+    # Filtering logic (basic, can be expanded)
+    selected_modality = request.args.getlist("modality")
+    selected_pi = request.args.get("pi")
+    selected_lead = request.args.get("lead")
+    filtered = []
+    for ds in datasets:
+        if selected_modality and ds.get("modality") not in selected_modality:
+            continue
+        if selected_pi and ds.get("principal_investigator") != selected_pi:
+            continue
+        if selected_lead and ds.get("lead") != selected_lead:
+            continue
+        filtered.append(ds)
 
     resp = make_response(
         render_template(
             "filecrawl.html",
+            extra_scripts=get_extra_scripts(),
+            datasets=filtered,
+            modalities=modalities,
+            principal_investigators=principal_investigators,
+            leads=leads,
+            enable_annotations=env.enable_annotations,
+        )
+    )
+    set_no_cache(resp)
+    return resp
+
+
+@app.route("/browse")
+@app.route("/browse/<path:path>")
+def file_browser(path=None):
+    """Traditional file browser with annotation support"""
+    source_name = request.args.get("source")
+    filter_str = request.args.get("filter")
+    
+    if source_name:
+        source = matching_source(source_name)
+        item_tree = source.list_items(filter_str)
+        rendered_html = render_item_source(source, filter_str)
+    else:
+        # Render all sources
+        rendered_html = "\n".join([
+            render_item_source(source, filter_str)
+            for source in item_sources
+        ])
+    
+    resp = make_response(
+        render_template(
+            "file_browser.html",
             extra_scripts=get_extra_scripts(),
             rendered_html=rendered_html,
             path=path,
@@ -277,6 +315,91 @@ def ip_address():
     return set_no_cache(resp)
 
 
+@app.route("/download/<path:source_name>/annotation/<path:annotation_path>", methods=["GET"])
+def download_annotation(source_name, annotation_path):
+    """Download annotation files"""
+    source = matching_source(source_name)
+    
+    # Look up the annotation item
+    lookup = source.lookup(annotation_path)
+    if lookup is None or lookup.annotation_item is None:
+        raise CellxgeneException(
+            f"Could not find annotation for path {annotation_path} in source {source.name}",
+            404,
+        )
+    
+    # Check authorization
+    if not source.is_authorized(annotation_path):
+        raise CellxgeneException("User not authorized to access this annotation", 403)
+    
+    # Get the local file path
+    annotation_file_path = source.get_local_path(lookup.annotation_item)
+    
+    # Extract directory and filename
+    import os
+    directory = os.path.dirname(annotation_file_path)
+    filename = os.path.basename(annotation_file_path)
+    
+    # Send file for download
+    return send_from_directory(
+        directory, 
+        filename, 
+        as_attachment=True,
+        download_name=filename
+    )
+
+
+@app.route("/download/csv/annotation/<path:dataset_file>/<filename>", methods=["GET"])
+def download_csv_annotation(dataset_file, filename):
+    """Download annotation files for CSV-based datasets"""
+    data_dir = os.environ.get("CELLXGENE_DATA", "cellxgene_data")
+    annotation_dir = os.path.join(data_dir, dataset_file.replace('.h5ad', '_annotations'))
+    
+    if not os.path.exists(annotation_dir):
+        raise CellxgeneException(f"Annotation directory not found", 404)
+    
+    annotation_file = os.path.join(annotation_dir, filename)
+    if not os.path.exists(annotation_file):
+        raise CellxgeneException(f"Annotation file {filename} not found", 404)
+    
+    return send_from_directory(
+        annotation_dir,
+        filename,
+        as_attachment=True,
+        download_name=filename
+    )
+
+
+@app.route("/view/csv/<path:dataset_file>/<annotation_name>", methods=["GET", "PUT", "POST"])
+def view_csv_with_new_annotation(dataset_file, annotation_name):
+    """Create and view a new annotation for CSV-based datasets"""
+    data_dir = os.environ.get("CELLXGENE_DATA", "cellxgene_data")
+    dataset_path = os.path.join(data_dir, dataset_file)
+    
+    if not os.path.exists(dataset_path):
+        raise CellxgeneException(f"Dataset file not found: {dataset_file}", 404)
+    
+    # Create annotation directory if it doesn't exist
+    annotation_dir = dataset_path.replace('.h5ad', '_annotations')
+    os.makedirs(annotation_dir, exist_ok=True)
+    
+    # Create annotation file if it doesn't exist
+    annotation_file = os.path.join(annotation_dir, annotation_name)
+    if not os.path.exists(annotation_file):
+        # Create an empty CSV file with basic headers
+        with open(annotation_file, 'w') as f:
+            f.write("cell_id,annotation\n")
+    
+    # Use the existing item source system to view the dataset with annotations
+    source = default_item_source
+    if source is None:
+        raise CellxgeneException("No data source available", 500)
+    
+    # Construct the path for the existing view system
+    annotation_path = dataset_file.replace('.h5ad', '_annotations') + '/' + annotation_name
+    return do_view(annotation_path, source.name)
+
+
 def launch():
     env.validate()
     if not item_sources or not len(item_sources):
@@ -292,7 +415,9 @@ def launch():
     background_thread.start()
 
     app.launchtime = current_time_stamp()
-    app.run(host="0.0.0.0", port=env.gateway_port, debug=False)
+    #app.run(host="0.0.0.0", port=env.gateway_port, debug=False)
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=env.gateway_port)
 
 
 def main():

@@ -1,0 +1,5 @@
+cell_id,cell_type,confidence
+cell_001,T-cell,0.95
+cell_002,B-cell,0.88
+cell_003,Monocyte,0.92
+cell_004,T-cell,0.89
