@@ -192,23 +192,13 @@ class FileItemSource(ItemSource):
                 for annotation in sorted_files
                 if annotation.endswith(self.annotation_file_suffix)
                 and not self.is_gene_set(annotation)
+                and "gene_sets" not in annotation  # Additional check to exclude gene_sets files
                 and os.path.isfile(os.path.join(annotations_fullpath, annotation))
             ]
 
-            # Catch gene sets without accompanying [annotations].csv
-            gene_sets_files = [
-                self.make_fileitem_from_path(
-                    annotation[: -len(self.gene_set_file_suffix)] + ".csv",
-                    annotations_subpath,
-                    True,
-                )
-                for annotation in sorted_files
-                if self.is_gene_set(annotation)
-                and annotation[: -len(self.gene_set_file_suffix)]
-                not in [a.name for a in annotation_files]
-                and os.path.isfile(os.path.join(annotations_fullpath, annotation))
-            ]
+            # Remove the gene_sets_files logic to prevent gene sets from being loadable
+            # The gene sets files will still be available for download via the download route
 
-            return sorted(annotation_files + gene_sets_files, key=lambda x: x.name)
+            return sorted(annotation_files, key=lambda x: x.name)
         else:
             return None

@@ -189,6 +189,7 @@ class S3ItemSource(ItemSource):
                     self.s3.ls(annotations_fullpath, refresh=self.refresh)
                 )
                 if annotation.endswith(self.annotation_file_suffix)
+                and "gene_sets" not in annotation  # Exclude gene_sets files
                 and self.s3.isfile("s3://" + annotation)
             ]
         else:

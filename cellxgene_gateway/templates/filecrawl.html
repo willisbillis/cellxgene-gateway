@@ -139,7 +139,7 @@
                                                             Download Annotations
                                                        </button>
                                                        <div class="dropdown-menu">
-                                                            {% for annotation in dataset.annotations %}
+                                                            {% for annotation in dataset.all_annotations %}
                                                             <a class="dropdown-item" href="/download/csv/annotation/{{ dataset.file_path }}/{{ annotation.file }}" download>⬇ {{ annotation.name }}</a>
                                                             {% endfor %}
                                                        </div>
