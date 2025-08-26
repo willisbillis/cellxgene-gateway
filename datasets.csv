@@ -1,4 +1,10 @@
 id,name,modality,principal_investigator,lead,description,file_path
-5,KNK Sample,RNA-seq,Dr. Lee,Eve Black,Single-cell RNA-seq from KNK project,qc_KNK_URT007_scRNA.TCR_jul25.h5ad
-6,Test Dataset,RNA-seq,Dr. Jones,Test Lead,Test dataset for annotation creation,test_dataset.h5ad
-7,Fresh Dataset,RNA-seq,Dr. New,Fresh Lead,A completely new dataset without annotations,fresh_dataset.h5ad
+5,URT007 Base,RNA-seq,Dr. Lee,Eve Black,Single-cell RNA-seq from URT007 project - base version,qc_KNK_URT007_scRNA.TCR_jul25.h5ad
+6,URT007 v2,RNA-seq,Dr. Lee,Eve Black,Single-cell RNA-seq from URT007 project - version 2,qc_KNK_URT007_scRNA.TCR_jul25_v2.h5ad
+7,URT005 v1,RNA-seq,Dr. Smith,John Doe,Single-cell RNA-seq from URT005 project - version 1,qc_KNK_URT005_scRNA.CSP.TCR_dec24_v1.h5ad
+8,URT005 v3,RNA-seq,Dr. Smith,John Doe,Single-cell RNA-seq from URT005 project - version 3,qc_KNK_URT005_scRNA.CSP.TCR_dec24_v3.h5ad
+9,URT005 v4,RNA-seq,Dr. Smith,John Doe,Single-cell RNA-seq from URT005 project - version 4,qc_KNK_URT005_scRNA.CSP.TCR_dec24_v4.h5ad
+10,URT004,RNA-seq,Dr. Johnson,Alice Brown,Single-cell RNA-seq from URT004 project,qc_KNK_URT004_scRNA_aug24.h5ad
+11,ACV02 All,RNA-seq,Dr. Wilson,Bob Green,ACV02 complete dataset,qc_ACV02_all.h5ad
+12,ACV02 ATAC,ATAC-seq,Dr. Wilson,Bob Green,ACV02 ATAC-seq pseudoRNA dataset,qc_ACV02_atac.pseudorna.h5ad
+13,ACV02 CD4,RNA-seq,Dr. Wilson,Bob Green,ACV02 CD4 subset,qc_ACV02_cd4.h5ad
