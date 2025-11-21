@@ -2,6 +2,13 @@
 
 Cellxgene Gateway allows you to use the Cellxgene Server provided by the Chan Zuckerberg Institute (https://github.com/chanzuckerberg/cellxgene) with multiple datasets. It displays an index of available h5ad (anndata) files. When a user clicks on a file name, it launches a Cellxgene Server instance that loads that particular data file and once it is available  proxies requests to that server.
 
+**Features:**
+- Multiple dataset management and browsing
+- Automatic cellxgene server lifecycle management
+- Annotations support with version control
+- S3 and local file system support
+- **SAML 2.0 authentication** for enterprise SSO (see [SAML_AUTHENTICATION.md](SAML_AUTHENTICATION.md))
+
 [![codecov](https://codecov.io/gh/Novartis/cellxgene-gateway/branch/master/graph/badge.svg?token=ndEFSzRKJn)](https://codecov.io/gh/Novartis/cellxgene-gateway) [![PyPI](https://img.shields.io/pypi/v/cellxgene-gateway)](https://pypi.org/project/cellxgene-gateway/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/cellxgene-gateway)](https://pypistats.org/packages/cellxgene-gateway)
 
 # Running locally
@@ -79,6 +86,24 @@ Optional environment variables:
 * `GATEWAY_ENABLE_BACKED_MODE` - Set to `true` or to `1` to load AnnData in file-backed mode. This saves memory and speeds up launch time but may reduce overall performance.
 * `GATEWAY_LOG_LEVEL` - default is `INFO`. set to `DEBUG` to increase logging and to `WARNING` to decrease logging.
 * `S3_ENABLE_LISTINGS_CACHE` - Set to `true` or to `1` to cache listings of S3 folders for performance. If the cache becomes stale, set `filecrawl.html?refresh=true` query parameter to refresh the cache.
+
+### SAML 2.0 Authentication
+
+Cellxgene Gateway supports SAML 2.0 authentication for enterprise Single Sign-On (SSO). See [SAML_AUTHENTICATION.md](SAML_AUTHENTICATION.md) for complete documentation.
+
+Quick start:
+* `SAML_ENABLED` - Set to `true` or `1` to enable SAML authentication
+* `SAML_REQUIRE_AUTHENTICATION` - Set to `true` or `1` to require authentication for all access
+* `FLASK_SECRET_KEY` - Required for SAML. Generate with `python3 -c "import secrets; print(secrets.token_hex(32))"`
+* `SAML_SP_ENTITY_ID` - Service Provider entity ID (default: "cellxgene-gateway")
+* `SAML_SP_ACS_URL` - Assertion Consumer Service URL (e.g., `https://your-domain.com/saml/acs`)
+* `SAML_IDP_ENTITY_ID` - Your Identity Provider's entity ID
+* `SAML_IDP_SSO_URL` - Your Identity Provider's SSO URL
+* `SAML_IDP_X509_CERT` - Your Identity Provider's X.509 certificate
+
+For detailed configuration, IdP-specific examples, and troubleshooting, see [SAML_AUTHENTICATION.md](SAML_AUTHENTICATION.md).
+
+### Dataset Metadata
 
 * `DATASET_METADATA_CSV` - Path to a CSV file containing dataset metadata for the data browser and filtering UI. If not set, defaults to `datasets.csv` in the project root. The CSV should have columns: `id,name,modality,principal_investigator,lead,description`. Example:
 

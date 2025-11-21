@@ -10,7 +10,9 @@
 import json
 import logging
 import os
+import secrets
 import urllib.parse
+from functools import wraps
 from threading import Lock, Thread
 
 from flask import (
@@ -20,6 +22,7 @@ from flask import (
     render_template,
     request,
     send_from_directory,
+    session,
     url_for,
 )
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -37,6 +40,12 @@ from cellxgene_gateway.prune_process_cache import PruneProcessCache
 from cellxgene_gateway.util import current_time_stamp
 
 app = Flask(__name__)
+
+# Configure session for SAML authentication
+app.secret_key = env.flask_secret_key or secrets.token_hex(32)
+app.config['SESSION_COOKIE_SECURE'] = env.external_protocol == 'https'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 item_sources = []
 default_item_source = None
@@ -315,6 +324,202 @@ def ip_address():
     return set_no_cache(resp)
 
 
+# SAML Authentication Routes and Helper Functions
+saml_config = None
+
+def init_saml():
+    """Initialize SAML configuration if enabled."""
+    global saml_config
+    if env.saml_enabled:
+        from cellxgene_gateway.saml_auth import get_saml_config
+        saml_config = get_saml_config()
+        if saml_config:
+            logging.getLogger("cellxgene_gateway").info("SAML authentication enabled")
+
+
+def require_saml_auth(f):
+    """Decorator to require SAML authentication for a route."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not env.saml_enabled or not env.saml_require_authentication:
+            return f(*args, **kwargs)
+        
+        if 'saml_user' not in session:
+            # Store the original URL to redirect back after login
+            session['saml_next_url'] = request.url
+            return redirect(url_for('saml_login'))
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def get_current_user():
+    """Get the currently authenticated user from session."""
+    if env.saml_enabled and 'saml_user' in session:
+        return session['saml_user']
+    return None
+
+
+@app.route("/saml/login")
+def saml_login():
+    """Initiate SAML authentication."""
+    if not env.saml_enabled or saml_config is None:
+        raise CellxgeneException("SAML authentication is not enabled", 404)
+    
+    try:
+        auth = saml_config.init_saml_auth(request)
+        
+        # Store the URL to redirect to after successful authentication
+        next_url = request.args.get('next') or session.get('saml_next_url') or url_for('index')
+        session['saml_next_url'] = next_url
+        
+        # Initiate SSO
+        sso_url = auth.login()
+        return redirect(sso_url)
+    except Exception as e:
+        logging.getLogger("cellxgene_gateway").error(f"SAML login error: {str(e)}")
+        raise CellxgeneException(f"SAML login failed: {str(e)}", 500)
+
+
+@app.route("/saml/acs", methods=["POST"])
+def saml_acs():
+    """SAML Assertion Consumer Service - handles the SAML response from IdP."""
+    if not env.saml_enabled or saml_config is None:
+        raise CellxgeneException("SAML authentication is not enabled", 404)
+    
+    try:
+        from cellxgene_gateway.saml_auth import extract_user_attributes
+        
+        auth = saml_config.init_saml_auth(request)
+        auth.process_response()
+        
+        errors = auth.get_errors()
+        if errors:
+            error_reason = auth.get_last_error_reason()
+            logging.getLogger("cellxgene_gateway").error(
+                f"SAML ACS errors: {errors}, reason: {error_reason}"
+            )
+            raise CellxgeneException(
+                f"SAML authentication failed: {error_reason}",
+                401
+            )
+        
+        if not auth.is_authenticated():
+            raise CellxgeneException("SAML authentication failed", 401)
+        
+        # Extract user attributes from SAML response
+        settings = saml_config.load_settings()
+        user_info = extract_user_attributes(auth, settings)
+        
+        # Store user info in session
+        session['saml_user'] = user_info
+        session['saml_authenticated'] = True
+        
+        logging.getLogger("cellxgene_gateway").info(
+            f"SAML user authenticated: {user_info.get('username')}"
+        )
+        
+        # Redirect to original URL or home
+        next_url = session.pop('saml_next_url', url_for('index'))
+        return redirect(next_url)
+        
+    except CellxgeneException:
+        raise
+    except Exception as e:
+        logging.getLogger("cellxgene_gateway").error(f"SAML ACS error: {str(e)}")
+        raise CellxgeneException(f"SAML authentication processing failed: {str(e)}", 500)
+
+
+@app.route("/saml/metadata")
+def saml_metadata():
+    """Provide SAML Service Provider metadata."""
+    if not env.saml_enabled or saml_config is None:
+        raise CellxgeneException("SAML authentication is not enabled", 404)
+    
+    try:
+        auth = saml_config.init_saml_auth(request)
+        settings = auth.get_settings()
+        metadata = settings.get_sp_metadata()
+        errors = settings.validate_metadata(metadata)
+        
+        if errors:
+            logging.getLogger("cellxgene_gateway").error(
+                f"SAML metadata errors: {errors}"
+            )
+            raise CellxgeneException(f"SAML metadata error: {', '.join(errors)}", 500)
+        
+        resp = make_response(metadata, 200)
+        resp.headers['Content-Type'] = 'text/xml'
+        return resp
+        
+    except CellxgeneException:
+        raise
+    except Exception as e:
+        logging.getLogger("cellxgene_gateway").error(f"SAML metadata error: {str(e)}")
+        raise CellxgeneException(f"SAML metadata generation failed: {str(e)}", 500)
+
+
+@app.route("/saml/logout")
+def saml_logout():
+    """Initiate SAML Single Logout."""
+    if not env.saml_enabled or saml_config is None:
+        # If SAML not enabled, just clear session and redirect
+        session.clear()
+        return redirect(url_for('index'))
+    
+    try:
+        auth = saml_config.init_saml_auth(request)
+        
+        # Get user info for SLO
+        name_id = session.get('saml_user', {}).get('nameid')
+        session_index = session.get('saml_user', {}).get('session_index')
+        
+        # Clear local session
+        session.clear()
+        
+        # Initiate SLO if we have the required info
+        if name_id and session_index:
+            slo_url = auth.logout(name_id=name_id, session_index=session_index)
+            return redirect(slo_url)
+        else:
+            return redirect(url_for('index'))
+            
+    except Exception as e:
+        logging.getLogger("cellxgene_gateway").error(f"SAML logout error: {str(e)}")
+        session.clear()
+        return redirect(url_for('index'))
+
+
+@app.route("/saml/sls", methods=["GET", "POST"])
+def saml_sls():
+    """SAML Single Logout Service - handles logout responses from IdP."""
+    if not env.saml_enabled or saml_config is None:
+        return redirect(url_for('index'))
+    
+    try:
+        auth = saml_config.init_saml_auth(request)
+        
+        def dscb():
+            """Callback to delete session."""
+            session.clear()
+        
+        url = auth.process_slo(delete_session_cb=dscb)
+        errors = auth.get_errors()
+        
+        if errors:
+            logging.getLogger("cellxgene_gateway").error(f"SAML SLS errors: {errors}")
+        
+        if url:
+            return redirect(url)
+        else:
+            return redirect(url_for('index'))
+            
+    except Exception as e:
+        logging.getLogger("cellxgene_gateway").error(f"SAML SLS error: {str(e)}")
+        session.clear()
+        return redirect(url_for('index'))
+
+
 @app.route("/download/<path:source_name>/annotation/<path:annotation_path>", methods=["GET"])
 def download_annotation(source_name, annotation_path):
     """Download annotation files"""
@@ -408,6 +613,9 @@ def launch():
     global default_item_source
     if default_item_source is None:
         default_item_source = item_sources[0]
+
+    # Initialize SAML if enabled
+    init_saml()
 
     pruner = PruneProcessCache(cache)
 

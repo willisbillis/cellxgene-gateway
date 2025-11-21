@@ -36,6 +36,19 @@ enable_backed_mode = os.environ.get("GATEWAY_ENABLE_BACKED_MODE", "").lower() in
 ]
 log_level = logging.getLevelName(os.environ.get("GATEWAY_LOG_LEVEL", "INFO"))
 
+# SAML Authentication settings
+saml_enabled = os.environ.get("SAML_ENABLED", "").lower() in ["true", "1"]
+saml_settings_path = os.environ.get("SAML_SETTINGS_PATH", None)
+saml_sp_entity_id = os.environ.get("SAML_SP_ENTITY_ID", "cellxgene-gateway")
+saml_sp_acs_url = os.environ.get("SAML_SP_ACS_URL", None)
+saml_sp_sls_url = os.environ.get("SAML_SP_SLS_URL", None)
+saml_idp_entity_id = os.environ.get("SAML_IDP_ENTITY_ID", None)
+saml_idp_sso_url = os.environ.get("SAML_IDP_SSO_URL", None)
+saml_idp_slo_url = os.environ.get("SAML_IDP_SLO_URL", None)
+saml_idp_x509_cert = os.environ.get("SAML_IDP_X509_CERT", None)
+saml_require_authentication = os.environ.get("SAML_REQUIRE_AUTHENTICATION", "false").lower() in ["true", "1"]
+flask_secret_key = os.environ.get("FLASK_SECRET_KEY", None)
+
 env_vars = {
     "CELLXGENE_LOCATION": cellxgene_location,
 }
@@ -63,6 +76,10 @@ optional_env_vars = {
     "PROXY_FIX_HOST": proxy_fix_host,
     "PROXY_FIX_PORT": proxy_fix_port,
     "PROXY_FIX_PREFIX": proxy_fix_prefix,
+    "SAML_ENABLED": saml_enabled,
+    "SAML_SETTINGS_PATH": saml_settings_path,
+    "SAML_SP_ENTITY_ID": saml_sp_entity_id,
+    "SAML_REQUIRE_AUTHENTICATION": saml_require_authentication,
 }
 
 

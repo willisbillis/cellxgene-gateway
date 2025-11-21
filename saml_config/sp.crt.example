@@ -1,0 +1,6 @@
+# Placeholder for Service Provider X.509 Certificate
+# Replace this with your actual certificate when signing SAML requests
+# or encrypting assertions is required.
+#
+# To generate a self-signed certificate for testing:
+# openssl req -new -x509 -days 3652 -nodes -out sp.crt -keyout sp.key
