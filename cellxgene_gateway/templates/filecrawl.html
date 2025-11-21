@@ -105,6 +105,24 @@
                               <div class="card-body">
                                    <div class="row">
                                         <div class="col-md-8">
+                                             {% if dataset.versions %}
+                                             <!-- Grouped experiment -->
+                                             <h5 class="card-title">{{ dataset.experiment_name }}
+                                                  {% if dataset.has_annotations %}
+                                                  <span class="annotation-indicator">[annotations available]</span>
+                                                  {% endif %}
+                                             </h5>
+                                             <p class="card-text mb-1"><strong>Modality:</strong> {{ dataset.modality }}</p>
+                                             <p class="card-text mb-1"><strong>Principal Investigator:</strong> {{ dataset.principal_investigator }}</p>
+                                             <p class="card-text mb-1"><strong>Lead:</strong> {{ dataset.lead }}</p>
+                                             <p class="card-text"><strong>Description:</strong> {{ dataset.description }}</p>
+                                             <p class="card-text"><strong>Available Versions:</strong> 
+                                                  {% for version in dataset.versions %}
+                                                       <span class="badge badge-secondary">{{ version.display_name }}</span>
+                                                  {% endfor %}
+                                             </p>
+                                             {% else %}
+                                             <!-- Individual dataset -->
                                              <h5 class="card-title">{{ dataset.name }}
                                                   {% if dataset.has_annotations %}
                                                   {% set count = dataset.annotations|length %}
@@ -115,9 +133,61 @@
                                              <p class="card-text mb-1"><strong>Principal Investigator:</strong> {{ dataset.principal_investigator }}</p>
                                              <p class="card-text mb-1"><strong>Lead:</strong> {{ dataset.lead }}</p>
                                              <p class="card-text"><strong>Description:</strong> {{ dataset.description }}</p>
+                                             {% endif %}
                                         </div>
                                         <div class="col-md-4 text-right align-self-center">
-                                             {% if dataset.file_path %}
+                                             {% if dataset.versions %}
+                                             <!-- Grouped experiment controls -->
+                                             <div class="btn-group-vertical" style="width: 100%;">
+                                                  <div class="btn-group" style="width: 100%;">
+                                                       <button type="button" class="btn btn-success dropdown-toggle btn-lg" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 100%;">
+                                                            Select Version to View
+                                                       </button>
+                                                       <div class="dropdown-menu" style="width: 100%;">
+                                                            {% for version in dataset.versions %}
+                                                            <a class="dropdown-item" href="/view/{{ version.file_path }}/">{{ version.display_name }}</a>
+                                                            {% endfor %}
+                                                       </div>
+                                                  </div>
+                                                  {% if enable_annotations %}
+                                                  <div class="btn-group" style="margin-top: 10px; width: 100%;">
+                                                       <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 100%;">
+                                                            Launch with Annotations
+                                                       </button>
+                                                       <div class="dropdown-menu" style="width: 100%;">
+                                                            {% for version in dataset.versions %}
+                                                            {% if version.annotations %}
+                                                            <h6 class="dropdown-header">{{ version.display_name }}</h6>
+                                                            {% for annotation in version.annotations %}
+                                                            <a class="dropdown-item" href="/view/{{ version.file_path.replace('.h5ad', '_annotations') }}/{{ annotation.file }}/">&nbsp;&nbsp;{{ annotation.name }}</a>
+                                                            {% endfor %}
+                                                            <div class="dropdown-divider"></div>
+                                                            <a class="dropdown-item create-new-annotation" href="#" data-dataset-file="{{ version.file_path }}">&nbsp;&nbsp;+ Create New for {{ version.display_name }}</a>
+                                                            {% if not loop.last %}<div class="dropdown-divider"></div>{% endif %}
+                                                            {% endif %}
+                                                            {% endfor %}
+                                                       </div>
+                                                  </div>
+                                                  <div class="btn-group" style="margin-top: 5px; width: 100%;">
+                                                       <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="width: 100%;">
+                                                            Download Annotations
+                                                       </button>
+                                                       <div class="dropdown-menu" style="width: 100%;">
+                                                            {% for version in dataset.versions %}
+                                                            {% if version.all_annotations %}
+                                                            <h6 class="dropdown-header">{{ version.display_name }}</h6>
+                                                            {% for annotation in version.all_annotations %}
+                                                            <a class="dropdown-item" href="/download/csv/annotation/{{ version.file_path }}/{{ annotation.file }}" download>&nbsp;&nbsp;⬇ {{ annotation.name }}</a>
+                                                            {% endfor %}
+                                                            {% if not loop.last %}<div class="dropdown-divider"></div>{% endif %}
+                                                            {% endif %}
+                                                            {% endfor %}
+                                                       </div>
+                                                  </div>
+                                                  {% endif %}
+                                             </div>
+                                             {% elif dataset.file_path %}
+                                             <!-- Individual dataset controls -->
                                              <div class="btn-group-vertical" style="width: 100%;">
                                                   <a href="/view/{{ dataset.file_path }}/" class="btn btn-success btn-lg">View in Cellxgene</a>
                                                   {% if enable_annotations %}
@@ -139,7 +209,7 @@
                                                             Download Annotations
                                                        </button>
                                                        <div class="dropdown-menu">
-                                                            {% for annotation in dataset.annotations %}
+                                                            {% for annotation in dataset.all_annotations %}
                                                             <a class="dropdown-item" href="/download/csv/annotation/{{ dataset.file_path }}/{{ annotation.file }}" download>⬇ {{ annotation.name }}</a>
                                                             {% endfor %}
                                                        </div>

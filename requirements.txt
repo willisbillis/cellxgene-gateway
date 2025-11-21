@@ -4,3 +4,4 @@ werkzeug
 psutil
 requests
 python3-saml
+waitress

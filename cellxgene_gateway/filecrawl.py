@@ -25,6 +25,8 @@ def render_annotations(item, item_source):
     new_annotation = [f"<a class='new' href='{url}'>new</a>"]
 
     annotations = []
+    download_only_annotations = []
+    
     if item.annotations:
         for a in item.annotations:
             view_url = CacheKey(item, item_source, a).view_url
@@ -36,7 +38,28 @@ def render_annotations(item, item_source):
                 f"</span>"
             )
     
-    return "| annotations: " + ", ".join(new_annotation + annotations)
+    # Find gene_sets files for download only
+    import os
+    annotations_subpath = item_source.get_annotations_subpath(item)
+    annotations_fullpath = item_source.full_path(annotations_subpath)
+    if os.path.isdir(annotations_fullpath):
+        for filename in os.listdir(annotations_fullpath):
+            if filename.endswith('.csv') and 'gene_sets' in filename:
+                # Create a synthetic descriptor path for the gene_sets file
+                gene_sets_descriptor = os.path.join(annotations_subpath, filename).replace(os.sep, '/')
+                download_url = f"/download/{item_source.name}/annotation/{gene_sets_descriptor}"
+                display_name = filename.replace('.csv', '')
+                download_only_annotations.append(
+                    f"<span class='annotation-item'>"
+                    f"<a href='{download_url}' class='download-link' title='Download {html.escape(display_name)}' download>{html.escape(display_name)} ⬇</a>"
+                    f"</span>"
+                )
+    
+    all_annotations = annotations + download_only_annotations
+    if all_annotations:
+        return "| annotations: " + ", ".join(new_annotation + all_annotations)
+    else:
+        return "| annotations: " + ", ".join(new_annotation)
 
 
 def render_item(item, item_source):
