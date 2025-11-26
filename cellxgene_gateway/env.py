@@ -36,6 +36,15 @@ enable_backed_mode = os.environ.get("GATEWAY_ENABLE_BACKED_MODE", "").lower() in
 ]
 log_level = logging.getLevelName(os.environ.get("GATEWAY_LOG_LEVEL", "INFO"))
 
+# Access logging settings
+access_log_enabled = os.environ.get("GATEWAY_ACCESS_LOG_ENABLED", "true").lower() in [
+    "true",
+    "1",
+]
+access_log_file = os.environ.get("GATEWAY_ACCESS_LOG_FILE", "cellxgene_access.log")
+access_log_max_bytes = int(os.environ.get("GATEWAY_ACCESS_LOG_MAX_BYTES", str(10 * 1024 * 1024)))  # 10MB default
+access_log_backup_count = int(os.environ.get("GATEWAY_ACCESS_LOG_BACKUP_COUNT", "10"))
+
 env_vars = {
     "CELLXGENE_LOCATION": cellxgene_location,
 }
@@ -63,6 +72,10 @@ optional_env_vars = {
     "PROXY_FIX_HOST": proxy_fix_host,
     "PROXY_FIX_PORT": proxy_fix_port,
     "PROXY_FIX_PREFIX": proxy_fix_prefix,
+    "GATEWAY_ACCESS_LOG_ENABLED": access_log_enabled,
+    "GATEWAY_ACCESS_LOG_FILE": access_log_file,
+    "GATEWAY_ACCESS_LOG_MAX_BYTES": access_log_max_bytes,
+    "GATEWAY_ACCESS_LOG_BACKUP_COUNT": access_log_backup_count,
 }
 
 
