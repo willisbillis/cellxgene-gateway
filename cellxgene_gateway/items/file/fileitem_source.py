@@ -132,6 +132,16 @@ class FileItemSource(ItemSource):
             return self.shallowitem_from_descriptor(descriptor)
 
     def is_authorized(self, descriptor):
+        """Check if the current user is authorized to access this resource."""
+        # Import here to avoid circular dependency
+        from cellxgene_gateway import env
+        
+        # If SAML is enabled and authentication is required, check session
+        if env.saml_enabled and env.saml_require_authentication:
+            from flask import session
+            return session.get('saml_authenticated', False)
+        
+        # Otherwise, allow access (backward compatible)
         return True
 
     def lookup(self, indescriptor: str) -> LookupResult:

@@ -44,6 +44,18 @@ access_log_enabled = os.environ.get("GATEWAY_ACCESS_LOG_ENABLED", "true").lower(
 access_log_file = os.environ.get("GATEWAY_ACCESS_LOG_FILE", "cellxgene_access.log")
 access_log_max_bytes = int(os.environ.get("GATEWAY_ACCESS_LOG_MAX_BYTES", str(10 * 1024 * 1024)))  # 10MB default
 access_log_backup_count = int(os.environ.get("GATEWAY_ACCESS_LOG_BACKUP_COUNT", "10"))
+# SAML Authentication settings
+saml_enabled = os.environ.get("SAML_ENABLED", "").lower() in ["true", "1"]
+saml_settings_path = os.environ.get("SAML_SETTINGS_PATH", None)
+saml_sp_entity_id = os.environ.get("SAML_SP_ENTITY_ID", "cellxgene-gateway")
+saml_sp_acs_url = os.environ.get("SAML_SP_ACS_URL", None)
+saml_sp_sls_url = os.environ.get("SAML_SP_SLS_URL", None)
+saml_idp_entity_id = os.environ.get("SAML_IDP_ENTITY_ID", None)
+saml_idp_sso_url = os.environ.get("SAML_IDP_SSO_URL", None)
+saml_idp_slo_url = os.environ.get("SAML_IDP_SLO_URL", None)
+saml_idp_x509_cert = os.environ.get("SAML_IDP_X509_CERT", None)
+saml_require_authentication = os.environ.get("SAML_REQUIRE_AUTHENTICATION", "false").lower() in ["true", "1"]
+flask_secret_key = os.environ.get("FLASK_SECRET_KEY", None)
 
 env_vars = {
     "CELLXGENE_LOCATION": cellxgene_location,
@@ -76,6 +88,10 @@ optional_env_vars = {
     "GATEWAY_ACCESS_LOG_FILE": access_log_file,
     "GATEWAY_ACCESS_LOG_MAX_BYTES": access_log_max_bytes,
     "GATEWAY_ACCESS_LOG_BACKUP_COUNT": access_log_backup_count,
+    "SAML_ENABLED": saml_enabled,
+    "SAML_SETTINGS_PATH": saml_settings_path,
+    "SAML_SP_ENTITY_ID": saml_sp_entity_id,
+    "SAML_REQUIRE_AUTHENTICATION": saml_require_authentication,
 }
 
 

@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# Example environment configuration for SAML 2.0 authentication
+# Copy this file to run.sh and customize for your environment
+
+# Required: Basic Gateway Configuration
+export CELLXGENE_LOCATION=$(which cellxgene)
+export CELLXGENE_DATA=./cellxgene_data
+export GATEWAY_PORT=5005
+
+# Required: SAML Configuration
+export SAML_ENABLED=true
+export SAML_REQUIRE_AUTHENTICATION=true  # Set to false to make SAML optional
+
+# Required: Flask Session Secret (GENERATE YOUR OWN!)
+# Generate with: python3 -c "import secrets; print(secrets.token_hex(32))"
+export FLASK_SECRET_KEY="REPLACE_WITH_YOUR_GENERATED_SECRET_KEY"
+
+# Required: Service Provider URLs (update with your actual domain)
+export SAML_SP_ENTITY_ID="cellxgene-gateway"
+export SAML_SP_ACS_URL="https://your-domain.com/saml/acs"
+export SAML_SP_SLS_URL="https://your-domain.com/saml/sls"
+
+# Required: Identity Provider Configuration
+# Get these values from your IdP (Okta, Azure AD, Google Workspace, etc.)
+export SAML_IDP_ENTITY_ID="https://idp.example.com/entityid"
+export SAML_IDP_SSO_URL="https://idp.example.com/sso"
+export SAML_IDP_SLO_URL="https://idp.example.com/slo"  # Optional
+export SAML_IDP_X509_CERT="YOUR_IDP_CERTIFICATE_HERE"
+
+# Optional: Security Settings
+export SAML_WANT_ASSERTIONS_SIGNED=true
+export SAML_WANT_MESSAGES_SIGNED=false
+export SAML_SIGN_AUTHN_REQUEST=false
+
+# Optional: Attribute Mapping (customize based on your IdP)
+export SAML_ATTR_USERNAME=uid
+export SAML_ATTR_EMAIL=email
+export SAML_ATTR_FIRST_NAME=givenName
+export SAML_ATTR_LAST_NAME=sn
+
+# Optional: External Protocol (set to https in production)
+export EXTERNAL_PROTOCOL=https
+export EXTERNAL_HOST="your-domain.com"
+
+# Optional: Enable debug mode for troubleshooting
+# export SAML_DEBUG=true
+# export GATEWAY_LOG_LEVEL=DEBUG
+
+# Optional: Proxy Configuration (if behind reverse proxy)
+# export PROXY_FIX_FOR=1
+# export PROXY_FIX_PROTO=1
+# export PROXY_FIX_HOST=1
+# export PROXY_FIX_PORT=1
+
+# Start the gateway
+echo "Starting Cellxgene Gateway with SAML authentication..."
+echo "SP Metadata available at: ${EXTERNAL_PROTOCOL}://${EXTERNAL_HOST}/saml/metadata"
+echo "Login URL: ${EXTERNAL_PROTOCOL}://${EXTERNAL_HOST}/saml/login"
+
+cellxgene-gateway

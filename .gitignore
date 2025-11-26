@@ -6,6 +6,13 @@ run.sh
 .cellxgene-gateway
 *.h5ad
 
+# SAML Configuration - Never commit sensitive data
+saml_config/settings.json
+saml_config/sp.crt
+saml_config/sp.key
+saml_config/*.pem
+run.sh.saml
+
 
 # Created by https://www.gitignore.io/api/python
 # Edit at https://www.gitignore.io/?templates=python
