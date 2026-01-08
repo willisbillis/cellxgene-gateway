@@ -6,7 +6,7 @@ source .cellxgene-gateway/bin/activate
 export CELLXGENE_LOCATION=$(which cellxgene)
 export CELLXGENE_DATA=/home/elliott/Apps/github/cellxgene-gateway/cellxgene_data  # change this directory if you put data in a different place.
 export GATEWAY_PORT=5005
-export DATASET_METADATA_CSV=/home/elliott/github/cellxgene-gateway/datasets_test.csv
+export DATASET_METADATA_CSV=/home/elliott/Apps/github/cellxgene-gateway/datasets.csv
 export GATEWAY_ENABLE_ANNOTATIONS=true
 export GATEWAY_ENABLE_BACKED_MODE=true
 

@@ -366,7 +366,7 @@ def do_view(path, source_name=None):
                 user_info = get_user_info_from_headers()
                 logging.getLogger("cellxgene_gateway").info(
                     f"Dataset access: user={user_info['username']} email={user_info['email']} "
-                    f"dataset={key.file_path} annotation={key.annotation_file_path or 'none'}"
+                    f"dataset={match.key.file_path} annotation={match.key.annotation_file_path or 'none'}"
                 )
             return match.serve_content(path)
         else:
