@@ -12,6 +12,8 @@ import logging
 import os
 import secrets
 import urllib.parse
+from datetime import datetime
+from logging.handlers import RotatingFileHandler
 from functools import wraps
 from threading import Lock, Thread
 
@@ -50,6 +52,9 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 item_sources = []
 default_item_source = None
 
+# Initialize access logger
+access_logger = None
+
 
 def _force_https(app):
     def wrapper(environ, start_response):
@@ -86,6 +91,104 @@ if (
     )
 
 cache = BackendCache()
+
+
+def setup_access_logging():
+    """Configure access logging with file rotation."""
+    global access_logger
+    if not env.access_log_enabled:
+        return
+    
+    access_logger = logging.getLogger("cellxgene_gateway.access")
+    access_logger.setLevel(logging.INFO)
+    access_logger.propagate = False  # Don't propagate to root logger
+    
+    # Create rotating file handler
+    try:
+        handler = RotatingFileHandler(
+            env.access_log_file,
+            maxBytes=env.access_log_max_bytes,
+            backupCount=env.access_log_backup_count
+        )
+        
+        # Format: timestamp | username | email | ip_address | method | path | user_agent
+        formatter = logging.Formatter(
+            '%(asctime)s | %(username)s | %(email)s | %(ip_address)s | %(method)s | %(path)s | %(user_agent)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        handler.setFormatter(formatter)
+        access_logger.addHandler(handler)
+        
+        logging.getLogger("cellxgene_gateway").info(
+            f"Access logging enabled: {env.access_log_file} (max {env.access_log_max_bytes} bytes, {env.access_log_backup_count} backups)"
+        )
+    except Exception as e:
+        logging.getLogger("cellxgene_gateway").error(
+            f"Failed to setup access logging: {e}"
+        )
+
+
+def get_user_info_from_headers():
+    """Extract user information from Shibboleth headers passed by Apache."""
+    # Try Shibboleth headers first (from Apache reverse proxy)
+    username = (
+        request.headers.get('X-Remote-User') or
+        request.headers.get('Remote-User') or
+        request.environ.get('REMOTE_USER') or
+        'anonymous'
+    )
+    
+    email = (
+        request.headers.get('X-Shib-Mail') or
+        request.headers.get('mail') or
+        ''
+    )
+    
+    display_name = (
+        request.headers.get('X-Shib-DisplayName') or
+        request.headers.get('displayName') or
+        username
+    )
+    
+    return {
+        'username': username,
+        'email': email,
+        'display_name': display_name
+    }
+
+
+@app.before_request
+def log_user_access():
+    """Log all user access attempts with Shibboleth authentication info."""
+    if not access_logger or not env.access_log_enabled:
+        return
+    
+    # Skip logging for static files and status endpoints
+    if request.path.startswith('/static/') or request.path == '/favicon.ico':
+        return
+    
+    user_info = get_user_info_from_headers()
+    
+    # Get real IP address (considering proxy headers)
+    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    if ip_address and ',' in ip_address:
+        # X-Forwarded-For can contain multiple IPs, take the first one
+        ip_address = ip_address.split(',')[0].strip()
+    
+    user_agent = request.headers.get('User-Agent', '')
+    
+    # Log with extra fields
+    access_logger.info(
+        'User access',
+        extra={
+            'username': user_info['username'],
+            'email': user_info['email'],
+            'ip_address': ip_address,
+            'method': request.method,
+            'path': request.path,
+            'user_agent': user_agent[:200]  # Truncate long user agents
+        }
+    )
 
 
 @app.errorhandler(CellxgeneException)
@@ -258,6 +361,13 @@ def do_view(path, source_name=None):
         or match.status == CacheEntryStatus.loading
     ):
         if source.is_authorized(match.key.descriptor):
+            # Log dataset access with user information
+            if access_logger and env.access_log_enabled:
+                user_info = get_user_info_from_headers()
+                logging.getLogger("cellxgene_gateway").info(
+                    f"Dataset access: user={user_info['username']} email={user_info['email']} "
+                    f"dataset={key.file_path} annotation={key.annotation_file_path or 'none'}"
+                )
             return match.serve_content(path)
         else:
             raise CellxgeneException("User not authorized to access this data", 403)
@@ -614,6 +724,8 @@ def launch():
     if default_item_source is None:
         default_item_source = item_sources[0]
 
+    # Initialize access logging
+    setup_access_logging()
     # Initialize SAML if enabled
     init_saml()
 
