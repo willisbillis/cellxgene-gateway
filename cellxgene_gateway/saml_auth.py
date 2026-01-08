@@ -78,14 +78,25 @@ class SAMLConfig:
         sign_logout_request = os.environ.get("SAML_SIGN_LOGOUT_REQUEST", "false").lower() == "true"
         sign_logout_response = os.environ.get("SAML_SIGN_LOGOUT_RESPONSE", "false").lower() == "true"
         
+        # If no IdP cert, disable signature requirements for metadata generation
+        if not idp_x509_cert:
+            want_assertions_signed = False
+            want_messages_signed = False
+        
         # Attribute mapping
         attr_username = os.environ.get("SAML_ATTR_USERNAME", "uid")
         attr_email = os.environ.get("SAML_ATTR_EMAIL", "email")
         attr_first_name = os.environ.get("SAML_ATTR_FIRST_NAME", "givenName")
         attr_last_name = os.environ.get("SAML_ATTR_LAST_NAME", "sn")
         
+        # Use non-strict mode if IdP certificate is not provided (for metadata generation)
+        strict_mode = True
+        if not idp_x509_cert:
+            strict_mode = False
+            logger.info("SAML strict mode disabled - IdP certificate not configured")
+        
         settings = {
-            "strict": True,
+            "strict": strict_mode,
             "debug": os.environ.get("SAML_DEBUG", "false").lower() == "true",
             "sp": {
                 "entityId": sp_entity_id,

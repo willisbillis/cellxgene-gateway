@@ -18,8 +18,8 @@ export FLASK_SECRET_KEY="REPLACE_WITH_YOUR_GENERATED_SECRET_KEY"
 
 # Required: Service Provider URLs (update with your actual domain)
 export SAML_SP_ENTITY_ID="cellxgene-gateway"
-export SAML_SP_ACS_URL="https://your-domain.com/saml/acs"
-export SAML_SP_SLS_URL="https://your-domain.com/saml/sls"
+export SAML_SP_ACS_URL="https://cellxgene-gateway.emory.edu/saml/acs"
+export SAML_SP_SLS_URL="https://cellxgene-gateway.emory.edu/saml/sls"
 
 # Required: Identity Provider Configuration
 # Get these values from your IdP (Okta, Azure AD, Google Workspace, etc.)
